@@ -1,0 +1,180 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="hospital" format="json">
+      <types:shape format="weave" example="examples/input.json"><![CDATA[%dw 2.0
+
+type hospital = {|
+  Patient: {|
+    cin: String, 
+    firstName: String, 
+    lastName: String, 
+    address: String, 
+    email: String, 
+    phone: String
+  |}, 
+  Doctor: {|
+    cin: String, 
+    firstName: String, 
+    lastName: String, 
+    address: String, 
+    email: String, 
+    phone: String
+  |}, 
+  Billing: {|
+    idMed: String, 
+    idPat: String, 
+    idPharmacy: String, 
+    date: String, 
+    amount: Number {"typeId": "double"}
+  |}, 
+  Pharmacy: {|
+    code: String, 
+    name: String, 
+    address: String, 
+    phone: String
+  |}
+|} {"example": "{\\\"Patient\\\":{\\\"cin\\\":\\\"P12345\\\",\\\"firstName\\\":\\\"John\\\",\\\"lastName\\\":\\\"Doe\\\",\\\"address\\\":\\\"123 Main Street\\\",\\\"email\\\":\\\"john.doe@example.com\\\",\\\"phone\\\":\\\"1234567890\\\"},\\\"Doctor\\\":{\\\"cin\\\":\\\"D67890\\\",\\\"firstName\\\":\\\"Jane\\\",\\\"lastName\\\":\\\"Smith\\\",\\\"address\\\":\\\"456 Elm Street\\\",\\\"email\\\":\\\"jane.smith@example.com\\\",\\\"phone\\\":\\\"0987654321\\\"},\\\"Billing\\\":{\\\"idMed\\\":\\\"6738c4aba367c341518197e8\\\",\\\"idPat\\\":\\\"67276e050fea5403c8123a29\\\",\\\"idPharmacy\\\":\\\"6738d122b6c2b958acf27f18\\\",\\\"date\\\":\\\"2024-11-28\\\",\\\"amount\\\":150.75},\\\"Pharmacy\\\":{\\\"code\\\":\\\"PH001\\\",\\\"name\\\":\\\"HealthPlus Pharmacy\\\",\\\"address\\\":\\\"789 Oak Avenue\\\",\\\"phone\\\":\\\"1122334455\\\"}}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="billing" format="json">
+      <types:shape format="weave" example="examples/billing.json"><![CDATA[%dw 2.0
+
+type billing = {|
+  idMed: String, 
+  idPat: String, 
+  idPharmacy: String, 
+  date: String, 
+  amount: Number {"typeId": "double"}
+|} {"example": "{\\\"idMed\\\":\\\"6738c4aba367c341518197e8\\\",\\\"idPat\\\":\\\"67276e440fea5403c8123a6b\\\",\\\"idPharmacy\\\":\\\"6738d122b6c2b958acf27f18\\\",\\\"date\\\":\\\"2024-11-30\\\",\\\"amount\\\":100.50}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="patient" format="json">
+      <types:shape format="weave" example="examples/patient.json"><![CDATA[%dw 2.0
+
+type patient = {|
+  cin: String, 
+  firstName: String, 
+  lastName: String, 
+  address: String, 
+  email: String, 
+  phone: String
+|} {"example": "{\\\"cin\\\":\\\"P12345\\\",\\\"firstName\\\":\\\"John\\\",\\\"lastName\\\":\\\"Doe\\\",\\\"address\\\":\\\"123 Main Street\\\",\\\"email\\\":\\\"john.doe@example.com\\\",\\\"phone\\\":\\\"1234567890\\\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="exam" format="json">
+      <types:shape format="weave" example="examples/inputExam.json"><![CDATA[%dw 2.0
+
+type exam = {|
+  Patient: {|
+    cin: String, 
+    firstName: String, 
+    lastName: String, 
+    address: String, 
+    email: String, 
+    phone: String
+  |}, 
+  Doctor: {|
+    cin: String, 
+    firstName: String, 
+    lastName: String, 
+    address: String, 
+    email: String, 
+    phone: String
+  |}, 
+  Billing: {|
+    idMed: String, 
+    idPat: String, 
+    idPharmacy: String, 
+    date: String, 
+    amount: Number {"typeId": "double"}
+  |}, 
+  Pharmacy: {|
+    code: String, 
+    name: String, 
+    address: String, 
+    phone: String
+  |}, 
+  Analyse: {|
+    libelle: String, 
+    "type": String, 
+    description: String, 
+    idPatient: String
+  |}
+|} {"example": "{\\\"Patient\\\":{\\\"cin\\\":\\\"P12345\\\",\\\"firstName\\\":\\\"John\\\",\\\"lastName\\\":\\\"Doe\\\",\\\"address\\\":\\\"123 Main Street\\\",\\\"email\\\":\\\"john.doe@example.com\\\",\\\"phone\\\":\\\"1234567890\\\"},\\\"Doctor\\\":{\\\"cin\\\":\\\"D67890\\\",\\\"firstName\\\":\\\"Jane\\\",\\\"lastName\\\":\\\"Smith\\\",\\\"address\\\":\\\"456 Elm Street\\\",\\\"email\\\":\\\"jane.smith@example.com\\\",\\\"phone\\\":\\\"0987654321\\\"},\\\"Billing\\\":{\\\"idMed\\\":\\\"6738c4aba367c341518197e8\\\",\\\"idPat\\\":\\\"67276e050fea5403c8123a29\\\",\\\"idPharmacy\\\":\\\"6738d122b6c2b958acf27f18\\\",\\\"date\\\":\\\"2024-11-28\\\",\\\"amount\\\":150.75},\\\"Pharmacy\\\":{\\\"code\\\":\\\"PH001\\\",\\\"name\\\":\\\"HealthPlus Pharmacy\\\",\\\"address\\\":\\\"789 Oak Avenue\\\",\\\"phone\\\":\\\"1122334455\\\"},\\\"Analyse\\\":{\\\"libelle\\\":\\\"Bus Sans Var\\\",\\\"type\\\":\\\"urinaire\\\",\\\"description\\\":\\\"Lorem ipsum\\\",\\\"idPatient\\\":\\\"67276e440fea5403c8123a6b\\\"}}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#2389f00f-bc04-4ea0-b868-b9119352d8b2">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="hospital"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:message>
+          <types:payload type="billing"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#78e6322e-144b-4001-85cf-595c14143a15">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="hospital"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#f3e149c6-3e41-45d1-b4bd-29f9be85d22a">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="hospital"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#343c43c7-4299-4fdd-9e43-0927547e0953">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="hospital"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#955e4c66-3708-4231-9050-ed592d05b1f4">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="hospital"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#1b519141-ecc2-4871-8c67-9f7ca7986fc5">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="hospital"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#2ccc7619-a3d2-4b5b-a2a4-996a7194901b">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="exam"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

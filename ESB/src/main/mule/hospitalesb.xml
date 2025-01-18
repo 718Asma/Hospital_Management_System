@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="74bf2485-16b5-4e53-9366-a9b6b1c18a43" >
+		<http:listener-connection host="0.0.0.0" port="9090" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration_Billing" doc:name="HTTP Request configuration" doc:id="590c517b-bd9d-47b2-bcc6-5b64a75b89eb" basePath="/billing" >
+		<http:request-connection host="localhost" port="8088" />
+	</http:request-config>
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="48a45685-412b-4015-a9b6-bb9360f6ab78" >
+		<jms:active-mq-connection />
+	</jms:config>
+	<http:request-config name="HTTP_Request_configuration_Pharmacy" doc:name="HTTP Request configuration" doc:id="9a8406b4-8502-45dc-b35a-1c3d21dc0e30" basePath="/pharmacy" >
+		<http:request-connection host="localhost" port="5000" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration_Doctor" doc:name="HTTP Request configuration" doc:id="7b37fbca-5b40-4235-905e-d6271a5a31b8" basePath="/doctor" >
+		<http:request-connection host="localhost" port="8038" />
+	</http:request-config>
+	<wsc:config name="Web_Service_Consumer_Config_Patient" doc:name="Web Service Consumer Config" doc:id="1b850e7b-5fbc-4f8b-be50-b40716138545" >
+		<wsc:connection wsdlLocation="http://localhost:61663/PatientService.svc?singleWsdl" service="PatientService" port="BasicHttpBinding_IPatientService" address="http://localhost:61663/PatientService.svc" >
+			<wsc:web-service-security actor="http://schemas.xmlsoap.org/soap/actor/next" />
+		</wsc:connection>
+	</wsc:config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="d9032879-2a82-4ffc-929e-debbaa3cfb76" basePath="/analyse" >
+		<http:request-connection host="localhost" port="8084" />
+	</http:request-config>
+	<flow name="BillingFlow" doc:id="1c00c23b-a8fa-4343-892f-c6943e8221c9" >
+		<http:listener doc:name="Listener" doc:id="06293c16-ac64-4ceb-9ccb-94eafbcfd00f" config-ref="HTTP_Listener_config" path="/hospital"/>
+		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="21312748-6a65-46e3-aea5-2d52ab481d1b" variableName="hospitalPayload"/>
+		<ee:transform doc:name="Transform Message" doc:id="2389f00f-bc04-4ea0-b868-b9119352d8b2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	idMed: payload.Billing.idMed,
+	idPat: payload.Billing.idPat,
+	idPharmacy: payload.Billing.idPharmacy,
+	date: payload.Billing.date,
+	amount: payload.Billing.amount
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Billing" doc:id="c494bbb4-306d-490f-8c83-82ff22baba59" config-ref="HTTP_Request_configuration_Billing" path="/"/>
+		<jms:publish doc:name="Publish" doc:id="b895fdd5-979e-4321-83dc-4712369ab1f2" config-ref="JMS_Config" destination="hospitalTopic" destinationType="TOPIC">
+			<jms:message >
+				<jms:body ><![CDATA[#[vars.hospitalPayload]]]></jms:body>
+			</jms:message>
+		</jms:publish>
+	</flow>
+	<flow name="PatientFlow" doc:id="e82b7790-2fed-4ea0-8c93-9f0de440ff27" >
+		<jms:listener doc:name="On New Message" doc:id="bb9a0ef9-d056-4b3f-b3ef-dabf6b92adb8" config-ref="JMS_Config" destination="hospitalTopic" numberOfConsumers="1">
+			<jms:consumer-type >
+				<jms:topic-consumer shared="true" />
+			</jms:consumer-type>
+		</jms:listener>
+		<ee:transform doc:name="Transform Message" doc:id="1b519141-ecc2-4871-8c67-9f7ca7986fc5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://tempuri.org/
+---
+{
+	ns0#AddPatient: {
+		ns0#cin: payload.Patient.cin,
+		ns0#firstName: payload.Patient.firstName,
+		ns0#lastName: payload.Patient.lastName,
+		ns0#email: payload.Patient.email,
+		ns0#phone: payload.Patient.phone,
+		ns0#address: payload.Patient.address
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="Patient" doc:id="7c1e76f1-c757-45a8-9840-1a0c93963518" config-ref="Web_Service_Consumer_Config_Patient" operation="AddPatient"/>
+		<ee:transform doc:name="Transform Message" doc:id="f9b079fa-80f3-4441-87c3-819afb882a11" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.body]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name="Write" doc:id="e6fa765c-fad5-4f13-a0dd-2dd2956ca14b" path="C:\Users\718as\Desktop\DSI302\Atelier SOA\Mini Projet\patientOutput.txt"/>
+	</flow>
+	<flow name="DoctorFlow" doc:id="8769bb52-7029-4817-adb2-edaf2f3ed5a9" >
+		<jms:listener doc:name="On New Message" doc:id="80977918-f242-425b-b196-05d0791c2a5a" config-ref="JMS_Config" destination="hospitalTopic" numberOfConsumers="1">
+			<jms:consumer-type >
+				<jms:topic-consumer shared="true" />
+			</jms:consumer-type>
+		</jms:listener>
+		<ee:transform doc:name="Transform Message" doc:id="343c43c7-4299-4fdd-9e43-0927547e0953" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.Doctor]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Doctor" doc:id="d70f11d2-ce5c-46dc-9619-fb3bef3f85c2" config-ref="HTTP_Request_configuration_Doctor" path="/"/>
+	</flow>
+	<flow name="PharmacyFlow" doc:id="2c1636f8-ccab-43ae-b565-5c89add5bcc4" >
+		<jms:listener doc:name="On New Message" doc:id="3adafea2-2444-4364-8e18-588a3cc74fb7" config-ref="JMS_Config" destination="hospitalTopic" numberOfConsumers="1">
+			<jms:consumer-type >
+				<jms:topic-consumer shared="true" />
+			</jms:consumer-type>
+		</jms:listener>
+		<ee:transform doc:name="Transform Message" doc:id="f3e149c6-3e41-45d1-b4bd-29f9be85d22a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.Pharmacy]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Pharmacy" doc:id="521e9f5a-4648-409d-a5e3-5a1a72f47455" config-ref="HTTP_Request_configuration_Pharmacy" path="/add"/>
+	</flow>
+	<flow name="AnalyseFlowAsync" doc:id="78902a3b-b09a-4c02-9816-1c12c0fc82ca" >
+		<jms:listener doc:name="On New Message" doc:id="36fc0dd2-6b4b-4d7a-a638-38e87aca7803" config-ref="JMS_Config" destination="hospitalTopic" numberOfConsumers="1">
+			<jms:consumer-type >
+				<jms:topic-consumer shared="true" />
+			</jms:consumer-type>
+		</jms:listener>
+		<ee:transform doc:name="Transform Message" doc:id="2ccc7619-a3d2-4b5b-a2a4-996a7194901b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.Analyse]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Analyse" doc:id="51047054-e2d8-410a-badc-5a62909f721d" config-ref="HTTP_Request_configuration" path="/"/>
+		<file:write doc:name="Write" doc:id="cb5d2639-2260-4bb1-b668-1373d7fe41fe" path="C:\Users\718as\Desktop\notification.txt"/>
+	</flow>
+</mule>

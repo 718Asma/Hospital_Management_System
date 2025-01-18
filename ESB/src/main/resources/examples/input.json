@@ -1,0 +1,31 @@
+{
+  "Patient": {
+    "cin": "P12345",
+    "firstName": "John",
+    "lastName": "Doe",
+    "address": "123 Main Street",
+    "email": "john.doe@example.com",
+    "phone": "1234567890"
+  },
+  "Doctor": {
+    "cin": "D67890",
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "address": "456 Elm Street",
+    "email": "jane.smith@example.com",
+    "phone": "0987654321"
+  },
+  "Billing": {
+    "idMed": "6738c4aba367c341518197e8",
+    "idPat": "67276e050fea5403c8123a29",
+    "idPharmacy": "6738d122b6c2b958acf27f18",
+    "date": "2024-11-28",
+    "amount": 150.75
+  },
+  "Pharmacy": {
+    "code": "PH001",
+    "name": "HealthPlus Pharmacy",
+    "address": "789 Oak Avenue",
+    "phone": "1122334455"
+  }
+}
